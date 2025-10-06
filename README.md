@@ -22,7 +22,7 @@ iptables -F
 iptables -A INPUT -p tcp -s 45.236.45.96 --dport 80 -j ACCEPT
 
 # IP publica
-iptables -A INPUT -p tcp -s 54.227.62.238 --dport 80 -j ACCEPT
+iptables -A INPUT -p tcp -s 54.226.72.4 --dport 80 -j ACCEPT
 
 # Bloquear el resto de IPs en puerto 80
 iptables -A INPUT -p tcp --dport 80 -j DROP
