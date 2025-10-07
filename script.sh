@@ -6,8 +6,8 @@ echo "===== INICIO DE CONFIGURACIÓN EN EC2 (AMAZON LINUX) ====="
 # 1. Actualizar sistema
 sudo yum update -y
 
-# 2. Instalar Apache, Curl y Git
-sudo yum install -y httpd git curl
+# 2. Instalar Apache y Git (QUITAMOS curl para evitar conflicto con curl-minimal)
+sudo yum install -y httpd git
 
 # 3. Habilitar y arrancar Apache
 sudo systemctl enable httpd
@@ -68,7 +68,7 @@ cat <<EOF | sudo tee /var/www/$DOMINIO/public_html/index.html
 </html>
 EOF
 
-# 6. Configurar VirtualHost con restricción de IP
+# 6. Configurar VirtualHost
 sudo bash -c "cat > /etc/httpd/conf.d/$DOMINIO.conf" <<EOL
 <VirtualHost *:80>
     ServerAdmin admin@$DOMINIO
@@ -78,9 +78,7 @@ sudo bash -c "cat > /etc/httpd/conf.d/$DOMINIO.conf" <<EOL
     <Directory /var/www/$DOMINIO/public_html>
         Options Indexes FollowSymLinks
         AllowOverride None
-        Require ip 45.236.45.96        # IP del campus
-        Require ip 38.25.10.215        # Tu IP pública
-        Require all denied
+        Require all granted
     </Directory>
 
     ErrorLog /var/log/httpd/$DOMINIO-error.log
