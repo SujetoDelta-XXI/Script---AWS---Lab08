@@ -1,26 +1,26 @@
 #!/bin/bash
 set -e
 
-# Actualizar sistema
-sudo apt update -y
-sudo apt upgrade -y
+echo "===== INICIO DE CONFIGURACIÓN EN EC2 (AMAZON LINUX) ====="
 
-# Instalar Apache, UFW y Curl
-sudo apt install -y apache2 ufw curl git
+# 1. Actualizar sistema
+sudo yum update -y
 
-# Habilitar Apache en el arranque
-sudo systemctl enable apache2
-sudo systemctl start apache2
+# 2. Instalar Apache, Curl y Git
+sudo yum install -y httpd git curl
 
-# Nombre del dominio (ajusta si tu grupo usa otro nombre)
+# 3. Habilitar y arrancar Apache
+sudo systemctl enable httpd
+sudo systemctl start httpd
+
+# 4. Configurar dominio
 DOMINIO="g28.asparrin.asesoresti.net"
 
-# Crear estructura de directorios
 sudo mkdir -p /var/www/$DOMINIO/public_html
-sudo chown -R ubuntu:ubuntu /var/www/$DOMINIO/public_html
+sudo chown -R ec2-user:ec2-user /var/www/$DOMINIO/public_html
 sudo chmod -R 755 /var/www/$DOMINIO
 
-# Crear página web personalizada
+# 5. Crear página web personalizada
 cat <<EOF | sudo tee /var/www/$DOMINIO/public_html/index.html
 <!DOCTYPE html>
 <html lang="es">
@@ -68,8 +68,8 @@ cat <<EOF | sudo tee /var/www/$DOMINIO/public_html/index.html
 </html>
 EOF
 
-# Configurar VirtualHost
-sudo bash -c "cat > /etc/apache2/sites-available/$DOMINIO.conf" <<EOL
+# 6. Configurar VirtualHost con restricción de IP
+sudo bash -c "cat > /etc/httpd/conf.d/$DOMINIO.conf" <<EOL
 <VirtualHost *:80>
     ServerAdmin admin@$DOMINIO
     ServerName $DOMINIO
@@ -78,29 +78,22 @@ sudo bash -c "cat > /etc/apache2/sites-available/$DOMINIO.conf" <<EOL
     <Directory /var/www/$DOMINIO/public_html>
         Options Indexes FollowSymLinks
         AllowOverride None
-        Require all granted
+        Require ip 45.236.45.96        # IP del campus
+        Require ip 38.25.10.215        # Tu IP pública
+        Require all denied
     </Directory>
 
-    ErrorLog \${APACHE_LOG_DIR}/error.log
-    CustomLog \${APACHE_LOG_DIR}/access.log combined
+    ErrorLog /var/log/httpd/$DOMINIO-error.log
+    CustomLog /var/log/httpd/$DOMINIO-access.log combined
 </VirtualHost>
 EOL
 
-# Activar sitio y reiniciar Apache
-sudo a2ensite $DOMINIO.conf
-sudo a2dissite 000-default.conf
-sudo apache2ctl configtest
-sudo systemctl reload apache2
-sudo systemctl restart apache2
+# 7. Reiniciar Apache
+sudo systemctl restart httpd
 
-# Configurar firewall 
-sudo ufw allow 80/tcp
-sudo ufw allow 443/tcp
-sudo ufw allow ssh
-sudo ufw --force enable
-
-# Probar conexión
+# 8. Probar conexión local
 echo "Probando el sitio localmente..."
 curl http://localhost || true
 
-echo "Configuración completada correctamente para: $DOMINIO"
+echo "===== CONFIGURACIÓN COMPLETADA EXITOSAMENTE PARA: $DOMINIO ====="
+
